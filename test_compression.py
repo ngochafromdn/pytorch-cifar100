@@ -1,12 +1,9 @@
-# test.py
-
 import time
 import torch
 from utils import get_network, get_test_dataloader
 from conf import settings
 import argparse
 
-# Unchanged function
 def calculate_average_inference_time_and_memory(net, data_loader):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -55,10 +52,20 @@ if __name__ == '__main__':
         batch_size=args.b,
     )
 
-    # Load the quantized model
-    net.load_state_dict(torch.load(args.weights, map_location=torch.device('cpu')))
-    print(net)
-    net.eval()
+    # Load the pruned model
+    if args.gpu:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    # Create an instance of the VGG model (same as in load_pretrained_model)
+    model = get_network(args)
+
+    # Load the pruned model
+    model.load_state_dict(torch.load(args.weights, map_location=device))
+
+    print(model)
+    model.eval()
 
     correct_1 = 0.0
     correct_5 = 0.0
@@ -74,7 +81,7 @@ if __name__ == '__main__':
                 print('GPU INFO.....')
                 print(torch.cuda.memory_summary(), end='')
 
-            output = net(image)
+            output = model(image)
             _, pred = output.topk(5, 1, largest=True, sorted=True)
 
             label = label.view(label.size(0), -1).expand_as(pred)
@@ -93,10 +100,10 @@ if __name__ == '__main__':
     print()
     print("Top 1 err: ", 1 - correct_1 / len(cifar100_test_loader.dataset))
     print("Top 5 err: ", 1 - correct_5 / len(cifar100_test_loader.dataset))
-    print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
+    print("Parameter numbers: {}".format(sum(p.numel() for p in model.parameters())))
 
     # Calculate average inference time and memory consumption per image
-    average_inference_time, average_memory_consumption = calculate_average_inference_time_and_memory(net, cifar100_test_loader)
+    average_inference_time, average_memory_consumption = calculate_average_inference_time_and_memory(model, cifar100_test_loader)
 
     # Print the results
     print(f"Average Inference Time per Image: {average_inference_time:.2f} ms")
