@@ -101,3 +101,11 @@ Average inference time: 0.23ms
 
 ## Compression techniques
 
+Prunning, quantization, weight sharing
+
+## Final model
+
+0.203
+Run time memory : 79.23 MB
+Average inference time: 0.20ms
+
